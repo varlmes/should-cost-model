@@ -16,7 +16,7 @@ import json
 import urllib.request
 import urllib.error
 
-from engine.models import CostEstimate
+from .models import CostEstimate
 
 
 # ─── PROMPT BUILDER ───────────────────────────────────────────────────────────
@@ -92,27 +92,21 @@ def _call_claude(prompt: str) -> str | None:
         return None
 
     payload = {
-        "model": "claude-sonnet-4-20250514",
+        "model": "claude-sonnet-4-6",
         "max_tokens": 600,
         "messages": [{"role": "user", "content": prompt}],
     }
 
-    req = urllib.request.Request(
-        "https://api.anthropic.com/v1/messages",
-        data=json.dumps(payload).encode(),
-        headers={
-            "Content-Type":      "application/json",
-            "x-api-key":         api_key,
-            "anthropic-version": "2023-06-01",
-        },
-        method="POST",
-    )
-
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            data = json.loads(resp.read())
-            return data["content"][0]["text"].strip()
-    except (urllib.error.URLError, KeyError, json.JSONDecodeError):
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+        message = client.messages.create(
+            model=payload["model"],
+            max_tokens=payload["max_tokens"],
+            messages=payload["messages"],
+        )
+        return message.content[0].text.strip()
+    except Exception:
         return None
 
 
