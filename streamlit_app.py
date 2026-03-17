@@ -29,7 +29,7 @@ from engine.models import (
     OverrideSource, PartInputs
 )
 from engine.estimator import estimate_cost
-from engine.explain import generate_narrative
+from engine.explain import add_narrative as generate_narrative
 from exporters.excel_export import export_to_excel
 
 # ─── PAGE CONFIG ──────────────────────────────────────────────────────────────
