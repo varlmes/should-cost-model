@@ -129,7 +129,7 @@ def _pct(part: float, total: float) -> str:
 # ─── HEADER ───────────────────────────────────────────────────────────────────
 st.markdown("#### — Sourcing Operations Suite")
 st.title("Parametric Should-Cost Estimator")
-st.caption("Defensible price estimation for machined aerospace parts  ·  V2  ·  Kenyon Woodley")
+st.caption("Defensible price estimation for machined aerospace parts  ·  Kenyon Woodley")
 st.markdown('<hr class="section-rule">', unsafe_allow_html=True)
 
 
