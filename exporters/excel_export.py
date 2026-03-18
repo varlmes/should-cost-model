@@ -320,7 +320,7 @@ def _build_notes_tab(ws, estimate: CostEstimate):
         ws.cell(row=r, column=1,
                 value="Scoring is fully deterministic. AI rewrites computed drivers into plain language only.").font = _body_font(color="888888")
         r += 1
-        narrative_cell = ws.cell(row=r, column=1, value=estimate.ai_narrative)
+        narrative_cell = ws.cell(row=r, column=1, value=estimate.ai_narrative.replace("**", "").replace("`", "$"))
         narrative_cell.font = _body_font()
         narrative_cell.alignment = Alignment(wrap_text=True, vertical="top")
         ws.row_dimensions[r].height = 120
