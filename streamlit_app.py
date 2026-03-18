@@ -29,7 +29,7 @@ from engine.models import (
     OverrideSource, PartInputs
 )
 from engine.estimator import estimate_cost
-from engine.explain import add_narrative as generate_narrative
+from engine.explain import generate_narrative
 from exporters.excel_export import export_to_excel
 
 # ─── PAGE CONFIG ──────────────────────────────────────────────────────────────
@@ -335,14 +335,13 @@ if run_btn:
             program=program or None,
             notes=notes or None,
             geometry=geo_inputs,
-
+            btf_override=btf_value,
         )
 
         with st.spinner("Computing estimate…"):
             estimate = estimate_cost(inputs)
 
         st.session_state["estimate"] = estimate
-        st.session_state["inputs_raw"] = inputs.model_dump()
         st.session_state["run_complete"] = True
 
     except Exception as e:
@@ -469,14 +468,26 @@ if st.session_state.get("run_complete") and "estimate" in st.session_state:
         if st.button("Generate Narrative"):
             with st.spinner("Generating narrative (~2–3s)…"):
                 try:
-                    est_with_narrative = generate_narrative(est)
-                    if est_with_narrative.ai_narrative:
-                        st.markdown(est_with_narrative.ai_narrative)
-                        st.session_state["estimate"] = est_with_narrative
+                    import os, anthropic
+                    api_key = os.environ.get("ANTHROPIC_API_KEY")
+                    if not api_key:
+                        st.error("ANTHROPIC_API_KEY not found in environment.")
                     else:
-                        st.warning("Narrative generation returned empty — check API key configuration.")
+                        client = anthropic.Anthropic(api_key=api_key)
+                        from engine.explain import _build_prompt
+                        prompt = _build_prompt(est)
+                        message = client.messages.create(
+                            model="claude-sonnet-4-6",
+                            max_tokens=600,
+                            messages=[{"role": "user", "content": prompt}],
+                        )
+                        narrative = message.content[0].text.strip()
+                        full_narrative = f"[AI-generated narrative — sourcing analyst summary]\n\n{narrative}"
+                        est.ai_narrative = full_narrative
+                        st.markdown(full_narrative)
+                        st.session_state["estimate"] = est
                 except Exception as e:
-                    st.warning(f"Narrative unavailable: {e}")
+                    st.error(f"Narrative error: {e}")
 
     # ── EXPORT BUTTON ─────────────────────────────────────────────────────────
     st.markdown('<hr class="section-rule">', unsafe_allow_html=True)
@@ -485,7 +496,7 @@ if st.session_state.get("run_complete") and "estimate" in st.session_state:
         with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
             export_path = tmp.name
 
-        export_to_excel(st.session_state["estimate"], st.session_state.get("inputs_raw", {}), export_path)
+        export_to_excel(st.session_state["estimate"], export_path)
 
         with open(export_path, "rb") as f:
             excel_bytes = f.read()
