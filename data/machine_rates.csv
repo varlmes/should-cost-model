@@ -1,5 +1,5 @@
 region,machine_type,rate_low_per_hr,rate_mid_per_hr,rate_high_per_hr,notes
-US,3_axis_mill,85,110,140,Standard CNC milling
+US,3_axis_mill,70,110,140,Standard CNC milling
 US,4_axis_mill,100,130,165,4-axis indexing
 US,5_axis_mill,120,155,195,Full 5-axis simultaneous
 US,turning,75,95,120,CNC lathe/turning center
