@@ -1,13 +1,13 @@
 """
 streamlit_app.py
 Should-Cost Estimator — V2 UI
-Single-part estimation with optional STEP geometry ingestion.
+Single-part estimation for machined aerospace parts.
 
 Run:
     streamlit run app/streamlit_app.py
 
 Requires:
-    pip install streamlit openpyxl anthropic cadquery
+    pip install streamlit openpyxl anthropic
 """
 
 import sys
@@ -77,15 +77,6 @@ st.markdown("""
   .conf-high  { color: #2d7a4e; font-weight: 700; font-family: 'Courier New', monospace; }
   .conf-med   { color: #c4a227; font-weight: 700; font-family: 'Courier New', monospace; }
   .conf-low   { color: #c94a1e; font-weight: 700; font-family: 'Courier New', monospace; }
-  .step-badge {
-    background: #f0eeea;
-    border-left: 3px solid #c94a1e;
-    padding: 6px 12px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.72rem;
-    color: #1a1a1a;
-    margin-bottom: 4px;
-  }
   .section-rule {
     border: none;
     border-top: 1px solid #d0cfc9;
@@ -133,57 +124,8 @@ st.caption("Defensible price estimation for machined aerospace parts  ·  Kenyon
 st.markdown('<hr class="section-rule">', unsafe_allow_html=True)
 
 
-# ─── SECTION 1: STEP UPLOAD ───────────────────────────────────────────────────
-st.subheader("01 — STEP File (Optional)")
-st.caption("Upload a .step or .stp file to auto-populate part weight and BTF estimate. All fields remain editable.")
-
-geo = None  # Will hold GeometryInputs if parse succeeds
-step_upload = st.file_uploader(
-    "Upload STEP file",
-    type=["step", "stp"],
-    label_visibility="collapsed",
-    help="Optional. If no file is uploaded, all geometry fields are entered manually."
-)
-
-if step_upload is not None:
-    # Write to temp file for cadquery
-    with tempfile.NamedTemporaryFile(suffix=".step", delete=False) as tmp:
-        tmp.write(step_upload.read())
-        tmp_path = tmp.name
-
-    with st.spinner("Parsing STEP geometry…"):
-        try:
-            from geometry.step_reader import parse_step
-            # We don't know material yet at upload time — parse without modifier,
-            # modifier will be applied after material selection in session state.
-            geo = parse_step(tmp_path, material=None)
-        except Exception:
-            geo = None
-
-    os.unlink(tmp_path)
-
-    if geo is not None and geo.parse_success:
-        st.success("STEP parsed successfully.")
-        cols = st.columns(4)
-        cols[0].metric("Volume (in³)",   f"{geo.volume_in3:.4f}" if geo.volume_in3 else "—")
-        cols[1].metric("Bounding Box",
-                        f"{geo.bbox_x:.2f} × {geo.bbox_y:.2f} × {geo.bbox_z:.2f} in"
-                        if geo.bbox_x else "—")
-        cols[2].metric("Envelope/Vol Ratio",
-                        f"{geo.envelope_to_volume_ratio:.3f}" if geo.envelope_to_volume_ratio else "—")
-        cols[3].metric("Slenderness Ratio",
-                        f"{geo.slenderness_ratio:.2f}" if geo.slenderness_ratio else "—")
-        if geo.material_hint:
-            st.info(f"Material hint found in STEP metadata: **{geo.material_hint}** — review below.")
-    else:
-        st.warning("STEP file could not be parsed. All fields will be entered manually.")
-        geo = None
-
-st.markdown('<hr class="section-rule">', unsafe_allow_html=True)
-
-
-# ─── SECTION 2: PART INPUTS ───────────────────────────────────────────────────
-st.subheader("02 — Part Inputs")
+# ─── SECTION 1: PART INPUTS ───────────────────────────────────────────────────
+st.subheader("01 — Part Inputs")
 
 col_left, col_right = st.columns(2)
 
@@ -195,56 +137,22 @@ with col_left:
 
     st.markdown("**Material & Geometry**")
     material_options = [m.value for m in Material]
-    # Pre-select based on STEP hint if available
-    default_mat_idx = 0
-    if geo and geo.material_hint and geo.material_hint in material_options:
-        default_mat_idx = material_options.index(geo.material_hint)
-    material_str = st.selectbox("Material", material_options, index=default_mat_idx)
+    material_str = st.selectbox("Material", material_options, index=0)
     material = Material(material_str)
-
-    # Weight — STEP-derived or manual
-    if geo and geo.parse_success and geo.volume_in3 is not None:
-        # Recompute weight now that we have material
-        from geometry.step_reader import MATERIAL_DENSITY
-        density = MATERIAL_DENSITY.get(material_str)
-        step_weight = round(geo.volume_in3 * density, 4) if density else None
-        weight_default = step_weight or 1.0
-        weight_help = "Auto-derived from STEP volume × material density. Override if needed."
-        st.markdown('<span class="source-label">↑ FROM STEP</span>', unsafe_allow_html=True)
-    else:
-        weight_default = 1.0
-        weight_help = "Finished part weight in pounds."
 
     finished_weight = st.number_input(
         "Finished Weight (lb)",
         min_value=0.01, max_value=500.0,
-        value=float(weight_default), step=0.1,
-        help=weight_help
+        value=1.0, step=0.1,
+        help="Finished part weight in pounds."
     )
 
-    # BTF — STEP-derived or manual
-    if geo and geo.parse_success and geo.envelope_to_volume_ratio is not None:
-        from geometry.step_reader import compute_btf_suggested
-        btf_auto = compute_btf_suggested(geo.envelope_to_volume_ratio, material_str)
-        btf_default = float(btf_auto)
-        btf_help = f"STEP-suggested (envelope/vol ratio: {geo.envelope_to_volume_ratio:.3f}). Override anytime."
-        st.markdown('<span class="source-label">↑ STEP-SUGGESTED — confirm before running</span>', unsafe_allow_html=True)
-        btf_confirmed = st.checkbox("I have confirmed this BTF value", value=False, key="btf_confirm")
-    else:
-        btf_default = 2.0
-        btf_help = "Buy-to-fly ratio: stock weight / finished weight. Typical range 1.3–4.5 for machined parts."
-        btf_confirmed = True  # Manual entry is assumed confirmed
-
-    # BTF field -- value is passed as btf_override to PartInputs and used by the engine
     btf_value = st.number_input(
         "Buy-to-Fly Ratio",
         min_value=1.0, max_value=8.0,
-        value=btf_default, step=0.1,
-        help=btf_help
+        value=2.0, step=0.1,
+        help="Buy-to-fly ratio: stock weight / finished weight. Typical range 1.3–4.5 for machined parts."
     )
-    # Mark confirmed once user edits the field
-    if btf_value != btf_default:
-        btf_confirmed = True
 
 with col_right:
     st.markdown("**Process Parameters**")
@@ -294,30 +202,14 @@ with col_right:
 st.markdown('<hr class="section-rule">', unsafe_allow_html=True)
 
 
-# ─── SECTION 3: RUN ───────────────────────────────────────────────────────────
-st.subheader("03 — Estimate")
-
-# BTF confirmation warning
-if geo and geo.parse_success and not btf_confirmed:
-    st.warning("⚠ BTF is STEP-suggested and has not been confirmed. Check the value above before running.")
+# ─── SECTION 2: RUN ───────────────────────────────────────────────────────────
+st.subheader("02 — Estimate")
 
 run_disabled = False
 run_btn = st.button("Run Should-Cost Estimate", type="primary", disabled=run_disabled)
 
 if run_btn:
-    # Build PartInputs
-    # btf_value is passed as btf_override and used directly by the engine
-    # for material cost calculation. Tier defaults are used as fallback.
     try:
-        geo_inputs = geo if (geo and geo.parse_success) else None
-
-        # If we have STEP geometry, update the btf_suggested with the material-aware value
-        if geo_inputs and geo_inputs.envelope_to_volume_ratio is not None:
-            from geometry.step_reader import compute_btf_suggested as _cbs
-            geo_inputs.btf_suggested = btf_value  # Use the (possibly user-confirmed) value
-            geo_inputs.btf_source = "step_derived" if not btf_confirmed or btf_value == btf_default else "manual"
-            geo_inputs.finished_weight_lb_derived = finished_weight
-
         inputs = PartInputs(
             part_id=part_id,
             part_description=part_desc,
@@ -334,8 +226,6 @@ if run_btn:
             outside_processes=outside_processes,
             program=program or None,
             notes=notes or None,
-            geometry=geo_inputs,
-
         )
 
         with st.spinner("Computing estimate…"):
@@ -357,7 +247,7 @@ if st.session_state.get("run_complete") and "estimate" in st.session_state:
     bd  = est.breakdown
 
     st.markdown('<hr class="section-rule">', unsafe_allow_html=True)
-    st.subheader("04 — Results")
+    st.subheader("03 — Results")
 
     # Hero row
     hero_col, conf_col = st.columns([3, 1])
@@ -446,17 +336,6 @@ if st.session_state.get("run_complete") and "estimate" in st.session_state:
                 "Material price becomes significant on high buy-to-fly or expensive alloys."
             )
 
-    # Geometry summary if STEP was used
-    if est.geometry and est.geometry.parse_success:
-        st.markdown('<hr class="section-rule">', unsafe_allow_html=True)
-        st.markdown("**Geometry (from STEP)**")
-        g = est.geometry
-        geo_cols = st.columns(4)
-        geo_cols[0].metric("Volume",    f"{g.volume_in3:.4f} in³"   if g.volume_in3 else "—")
-        geo_cols[1].metric("Env/Vol",   f"{g.envelope_to_volume_ratio:.3f}" if g.envelope_to_volume_ratio else "—")
-        geo_cols[2].metric("BTF Used",  f"{g.btf_suggested:.3f}x"   if g.btf_suggested else "—")
-        geo_cols[3].metric("BTF Source", g.btf_source or "—")
-
     st.markdown('<hr class="section-rule">', unsafe_allow_html=True)
 
     # ── SECTION 4: AI NARRATIVE ───────────────────────────────────────────────
@@ -518,9 +397,8 @@ if st.session_state.get("run_complete") and "estimate" in st.session_state:
 st.markdown("""
 <div class="footer-meta">
   Parametric Should-Cost Model V2 &nbsp;|&nbsp;
-  Python engine + cadquery + Streamlit &nbsp;|&nbsp;
+  Python engine + Streamlit &nbsp;|&nbsp;
   8 materials, 5 complexity tiers, 3 regions, 9 outside processes &nbsp;|&nbsp;
-  STEP geometry ingestion optional — all manual input paths remain available &nbsp;|&nbsp;
   Excel export is read-only. Python is source of truth.
 </div>
 """, unsafe_allow_html=True)
