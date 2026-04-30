@@ -314,7 +314,7 @@ if st.session_state.get("run_complete") and "estimate" in st.session_state:
         import pandas as pd
         st.dataframe(
             pd.DataFrame(breakdown_data),
-            use_container_width=True,
+            width="stretch",
             hide_index=True
         )
 
@@ -328,7 +328,7 @@ if st.session_state.get("run_complete") and "estimate" in st.session_state:
             }
             st.dataframe(
                 pd.DataFrame(sens_data),
-                use_container_width=True,
+                width="stretch",
                 hide_index=True
             )
             st.caption(

@@ -184,10 +184,10 @@ if estimate:
     c_left, c_right = st.columns(2)
     with c_left:
         st.markdown("**Cost Breakdown — Per Part**")
-        st.dataframe(breakdown_df, use_container_width=True, hide_index=True)
+        st.dataframe(breakdown_df, width="stretch", hide_index=True)
     with c_right:
         st.markdown("**Converted Geometry / Assumptions**")
-        st.dataframe(geometry_df, use_container_width=True, hide_index=True)
+        st.dataframe(geometry_df, width="stretch", hide_index=True)
 
     st.markdown("**Model Notes**")
     for note in estimate.notes:

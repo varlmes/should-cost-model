@@ -44,6 +44,12 @@ def units(value: float) -> str:
 st.markdown("#### — Sourcing Operations Suite")
 st.title("Supply Chain Network Optimizer")
 st.caption("Choose plant locations and allocate production to minimize fixed, manufacturing, and freight cost.")
+st.markdown(
+    """
+Reference projects: [logistics-app](https://github.com/suxrobGM/logistics-app) ·
+[supply-chain-optimization](https://github.com/samirsaci/supply-chain-optimization)
+"""
+)
 st.markdown('<hr class="rule">', unsafe_allow_html=True)
 
 with st.form("supply_chain_optimizer"):
@@ -129,16 +135,16 @@ if result:
 
         tabs = st.tabs(["Plants", "Production Flows", "Demand", "Lane Costs", "Inputs / Notes"])
         with tabs[0]:
-            st.dataframe(plant_display, use_container_width=True, hide_index=True)
+            st.dataframe(plant_display, width="stretch", hide_index=True)
         with tabs[1]:
-            st.dataframe(flow_display, use_container_width=True, hide_index=True)
+            st.dataframe(flow_display, width="stretch", hide_index=True)
         with tabs[2]:
-            st.dataframe(demand_display, use_container_width=True, hide_index=True)
+            st.dataframe(demand_display, width="stretch", hide_index=True)
         with tabs[3]:
             st.caption("Unit cost equals production variable cost plus freight cost per container / 1000.")
-            st.dataframe(lane_cost_df.style.format("${:,.2f}"), use_container_width=True)
+            st.dataframe(lane_cost_df.style.format("${:,.2f}"), width="stretch")
         with tabs[4]:
-            st.dataframe(baseline_df, use_container_width=True, hide_index=True)
+            st.dataframe(baseline_df, width="stretch", hide_index=True)
             for note in result.notes:
                 st.caption(f"• {note}")
 
@@ -155,7 +161,7 @@ if result:
 st.markdown(
     """
 <div style="font-family:'Courier New', monospace; font-size:.68rem; color:#7f8b94; margin-top:28px; border-top:1px solid #d1d9df; padding-top:10px;">
-  Supply Chain Network Optimizer | Plant location + capacity + production allocation | Deterministic Python solver.
+  Supply Chain Network Optimizer | Plant location + capacity + production allocation | Deterministic Python solver | References: suxrobGM/logistics-app and samirsaci/supply-chain-optimization.
 </div>
 """,
     unsafe_allow_html=True,

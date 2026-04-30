@@ -167,15 +167,15 @@ if result:
 
     tabs = st.tabs(["Summary", "Line Items", "Sensitivity", "Volume", "Recommendations"])
     with tabs[0]:
-        st.dataframe(summary_display, use_container_width=True, hide_index=True)
+        st.dataframe(summary_display, width="stretch", hide_index=True)
         if result.confidence_warning:
             st.warning(result.confidence_warning)
     with tabs[1]:
-        st.dataframe(line_df, use_container_width=True, hide_index=True)
+        st.dataframe(line_df, width="stretch", hide_index=True)
     with tabs[2]:
-        st.dataframe(sens_display, use_container_width=True, hide_index=True)
+        st.dataframe(sens_display, width="stretch", hide_index=True)
     with tabs[3]:
-        st.dataframe(volume_display, use_container_width=True, hide_index=True)
+        st.dataframe(volume_display, width="stretch", hide_index=True)
     with tabs[4]:
         if result.recommendations:
             for rec in result.recommendations:

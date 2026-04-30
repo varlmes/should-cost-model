@@ -201,13 +201,13 @@ if estimate:
 
     tabs = st.tabs(["Summary", "Process", "NRE", "Consumables", "Notes"])
     with tabs[0]:
-        st.dataframe(summary_display, use_container_width=True, hide_index=True)
+        st.dataframe(summary_display, width="stretch", hide_index=True)
     with tabs[1]:
-        st.dataframe(process_display, use_container_width=True, hide_index=True)
+        st.dataframe(process_display, width="stretch", hide_index=True)
     with tabs[2]:
-        st.dataframe(nre_display, use_container_width=True, hide_index=True)
+        st.dataframe(nre_display, width="stretch", hide_index=True)
     with tabs[3]:
-        st.dataframe(consumables_df, use_container_width=True, hide_index=True)
+        st.dataframe(consumables_df, width="stretch", hide_index=True)
     with tabs[4]:
         for note in estimate.notes:
             st.caption(f"• {note}")

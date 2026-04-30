@@ -67,3 +67,12 @@ If the key is absent, the narrative section is hidden. All cost numbers are dete
 - Python is the source of truth. Excel export is read-only.
 - STEP upload requires cadquery, which is not available on Streamlit Cloud. The app falls back to manual input automatically.
 - All cost numbers are deterministic. The AI layer generates explanation text only — it never produces or modifies cost figures.
+
+## Reference projects
+
+- [suxrobGM/logistics-app](https://github.com/suxrobGM/logistics-app)
+- [samirsaci/supply-chain-optimization](https://github.com/samirsaci/supply-chain-optimization)
+- [FinancialStrategy/CommoditiesAnalysis](https://github.com/FinancialStrategy/CommoditiesAnalysis)
+- [lrusso/3DObjectViewer](https://github.com/lrusso/3DObjectViewer)
+- [RichGude/Metal-Commodity-Pricing](https://github.com/RichGude/Metal-Commodity-Pricing)
+- [rahulissar/ai-supply-chain](https://github.com/rahulissar/ai-supply-chain)

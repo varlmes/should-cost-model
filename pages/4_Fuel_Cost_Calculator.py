@@ -97,7 +97,7 @@ if estimate:
         ("Extra costs", money(estimate.inputs.extra_costs, currency)),
         ("Passengers", estimate.inputs.passengers),
     ], columns=["Metric", "Value"])
-    st.dataframe(detail_df, use_container_width=True, hide_index=True)
+    st.dataframe(detail_df, width="stretch", hide_index=True)
 
     csv_buffer = io.StringIO()
     detail_df.to_csv(csv_buffer, index=False)
